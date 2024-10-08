@@ -1,76 +1,108 @@
 <template>
-  <div class="max-h-screen" v-if="images.length > 0">
-    <!-- Условие для отображения одной картинки без слайдера -->
-    <div class="max-h-full" v-if="images.length === 1">
-      <NuxtImg :src="images[0]" alt="Single Image" class="rounded-lg" />
+  <div v-if="images.length > 0" class="relative flex justify-center items-center max-h-full">
+    <!-- Отображение одной картинки -->
+    <div v-if="images.length === 1" @click="openModal(0)" class="flex justify-center items-center h-full">
+      <NuxtImg
+          :src="images[0]"
+          alt="Single Image"
+          loading="lazy"
+          format="webp"
+          placeholder
+          class="rounded-lg cursor-pointer"
+      />
     </div>
+
     <!-- Слайдер для нескольких картинок -->
-    <div v-else class="relative max-h-full w-full">
-      <div v-for="(image, index) in images" :key="index" class="w-full max-h-full">
-        <NuxtImg
-            :src="image"
-            alt="Slider Image"
-            class="rounded-lg max-h-full"
-            :class="{ 'hidden': index !== currentIndex }"
-        />
-      </div>
-      <!-- Управление навигацией (влево, вправо) -->
-      <button @click="prev" class="absolute left-0 top-1/2 transform -translate-y-1/2 p-2 bg-gray-800 text-white rounded-full">
-        &lt;
+    <div v-else class="relative flex justify-center items-center h-full">
+      <NuxtImg
+          v-for="(image, index) in images"
+          :key="index"
+          :src="image"
+          :class="{ 'hidden': index !== currentIndex }"
+          alt="Slider Image"
+          loading="lazy"
+          format="webp"
+          placeholder
+          @click="openModal(index)"
+          class="rounded-lg cursor-pointer"
+      />
+      <!-- Навигация -->
+      <button @click="prev" class="absolute left-0 top-1/2 transform -translate-y-1/2 p-5 bg-gray-800 text-white rounded-full">
+        <Icon name="material-symbols:chevron-left-rounded" />
       </button>
-      <button @click="next" class="absolute right-0 top-1/2 transform -translate-y-1/2 p-2 bg-gray-800 text-white rounded-full">
-        &gt;
+      <button @click="next" class="absolute right-0 top-1/2 transform -translate-y-1/2 p-5 bg-gray-800 text-white rounded-full">
+        <Icon name="material-symbols:chevron-right-rounded" />
       </button>
       <!-- Индикаторы -->
-      <div class="flex justify-center space-x-2 mt-2">
+      <div class="flex justify-center absolute top-0 space-x-2 mt-2">
         <button
             v-for="(image, index) in images"
             :key="index"
-            :class="{
-            'bg-blue-500': currentIndex === index,
-            'bg-gray-300': currentIndex !== index
-          }"
-            class="w-3 h-3 rounded-full"
             @click="goToSlide(index)"
+            class="w-3 h-3 rounded-full"
+            :class="{ 'bg-blue-500': currentIndex === index, 'bg-gray-300': currentIndex !== index }"
         ></button>
       </div>
     </div>
+
+    <!-- Модальное окно -->
+    <UModal v-model="isOpen" fullscreen class="overflow-hidden max-h-screen max-w-screen">
+      <Icon name="material-symbols:close-rounded" class="absolute right-2 top-0 cursor-pointer size-12" @click="isOpen = false" />
+      <Icon v-if="images.length > 1" name="material-symbols:chevron-left-rounded" class="absolute left-2 top-1/2 transform -translate-y-1/2 cursor-pointer size-12" @click="prev" />
+      <div class="flex justify-center items-center h-screen">
+        <NuxtImg
+            :src="images[currentIndex]"
+            alt="Modal Image"
+            loading="lazy"
+            format="webp"
+            placeholder
+            class="rounded-lg"
+        />
+      </div>
+      <Icon v-if="images.length > 1" name="material-symbols:chevron-right-rounded" class="absolute right-2 top-1/2 transform -translate-y-1/2 cursor-pointer size-12" @click="next" />
+    </UModal>
+
   </div>
 </template>
 
 <script setup>
-// Массив с изображениями передается через пропс
-defineProps({
+const props = defineProps({
   images: {
     type: Array,
     default: () => []
   }
 })
 
-// Текущий индекс слайдера
+const isOpen = ref(false)
 const currentIndex = ref(0)
 
-// Функция перехода к следующему изображению
-const next = () => {
-  currentIndex.value = (currentIndex.value + 1) % images.length
+// Открытие модального окна с выбранной картинкой
+const openModal = (index) => {
+  currentIndex.value = index
+  isOpen.value = true
 }
 
-// Функция перехода к предыдущему изображению
+// Переход к предыдущему изображению
 const prev = () => {
-  currentIndex.value =
-      (currentIndex.value - 1 + images.length) % images.length
+  currentIndex.value = (currentIndex.value - 1 + props.images.length) % props.images.length
 }
 
-// Функция перехода к конкретному слайду
+// Переход к следующему изображению
+const next = () => {
+  currentIndex.value = (currentIndex.value + 1) % props.images.length
+}
+
+// Переход к конкретному слайду
 const goToSlide = (index) => {
   currentIndex.value = index
 }
 </script>
 
 <style scoped>
-/* Добавьте стили для слайдера при необходимости */
+/* Стили для предотвращения выхода изображений за пределы контейнера */
 img {
-  height: 100%;
-  width: 100%;
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
 }
 </style>
